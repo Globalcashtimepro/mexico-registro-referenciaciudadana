@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; position: relative; }
+
+    .container { width: 100%; max-width: 450px; background-color: var(--card-bg); border-radius: 12px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid var(--border); }
+    .container.admin-wide { max-width: 800px; }
+
+    h2 { margin-bottom: 24px; text-align: center; font-size: 1.5rem; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-muted); }
+    
+    input[type="text"], input[type="password"] {
+      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background-color: #0f172a; color: var(--text); outline: none; font-size: 1rem;
+    }
+    input:focus { border-color: var(--primary); }
+    .password-wrapper { position: relative; }
+    
+    .toggle-btn {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem;
+    }
+
+    .btn {
+      width: 100%; padding: 12px; border-radius: 8px; border: none;
+      background-color: var(--primary); color: white; font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { background-color: var(--primary-hover); }
+    .btn-danger { background-color: var(--danger); width: auto; padding: 8px 16px; font-size: 0.875rem; }
+    .btn-secondary { background-color: var(--border); margin-top: 15px; }
+
+    .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 6px; display: none; }
+
+    /* Botón flotante Admin */
+    .admin-float-btn {
+      position: fixed; bottom: 15px; right: 15px; background: transparent;
+      border: none; color: #334155; font-size: 1.2rem; cursor: pointer; opacity: 0.3; transition: opacity 0.2s;
+    }
+    .admin-float-btn:hover { opacity: 1; color: var(--text-muted); }
+
+    /* Modal de Login Admin */
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100;
+    }
+    .modal-content { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 100%; max-width: 350px; border: 1px solid var(--border); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    th { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <!-- Formulario de Registro -->
+  <div class="container" id="view-register">
+    <h2>Registro de Usuario</h2>
+    <form id="registerForm">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" id="nombre" required placeholder="Tu nombre">
+      </div>
+
+      <div class="form-group">
+        <label>Apellido</label>
+        <input type="text" id="apellido" required placeholder="Tu apellido">
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" required placeholder="••••••••">
+          <button type="button" class="toggle-btn" onclick="togglePass('password', this)">👁️</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Repetir Contraseña</label>
+        <div class="password-wrapper">
+          <input type="password" id="confirmPassword" required placeholder="••••••••">
+          <button type="button" class="toggle-btn" onclick="togglePass('confirmPassword', this)">👁️</button>
+        </div>
+        <div class="error-msg" id="error-msg">Las contraseñas no coinciden</div>
+      </div>
+
+      <button type="submit" class="btn">Registrarse</button>
+    </form>
+  </div>
+
+  <!-- Panel Admin (Oculto por defecto) -->
+  <div class="container admin-wide" id="view-admin" style="display: none;">
+    <h2>Panel de Administración</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <span id="userCount">Usuarios registrados: 0</span>
+      <button class="btn btn-danger" onclick="clearData()">Borrar Datos</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre</th>
+          <th>Apellido</th>
+          <th>Contraseña</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+
+    <button class="btn btn-secondary" onclick="logoutAdmin()">Cerrar Sesión Admin</button>
+  </div>
+
+  <!-- Botón Discreto de Acceso Admin -->
+  <button class="admin-float-btn" onclick="openAdminModal()">⚙️️</button>
+
+  <!-- Modal de Login para Admin -->
+  <div class="modal" id="adminModal">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 15px; text-align: center;">Acceso Administrador</h3>
+      <div class="form-group">
+        <label>Usuario Admin</label>
+        <input type="text" id="adminUser">
+      </div>
+      <div class="form-group">
+        <label>Contraseña Admin</label>
+        <input type="password" id="adminPass">
+      </div>
+      <div class="error-msg" id="adminError" style="margin-bottom: 10px;">Credenciales incorrectas</div>
+      <button class="btn" onclick="loginAdmin()">Ingresar</button>
+      <button class="btn btn-secondary" onclick="closeAdminModal()">Cancelar</button>
+    </div>
+  </div>
+
+  <script>
+    const REDIRECT_URL = "https://google.com"; // Tu enlace de redirección
+    const ADMIN_USER = "admin";                // Usuario Admin
+    const ADMIN_PASS = "1234";                 // Contraseña Admin
+
+    function togglePass(inputId, btn) {
+      const input = document.getElementById(inputId);
+      input.type = input.type === "password" ? "text" : "password";
+      btn.textContent = input.type === "password" ? "👁️" : "🙈";
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre').value;
+      const apellido = document.getElementById('apellido').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const errorMsg = document.getElementById('error-msg');
+
+      if (password !== confirmPassword) {
+        errorMsg.style.display = 'block';
+        return;
+      }
+      
+      errorMsg.style.display = 'none';
+      const users = JSON.parse(localStorage.getItem('registered_users') || '[]');
+      users.push({ nombre, apellido, password, fecha: new Date().toLocaleString() });
+      localStorage.setItem('registered_users', JSON.stringify(users));
+
+      window.location.href = REDIRECT_URL;
+    });
+
+    // Lógica Modal & Auth Admin
+    function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
+    function closeAdminModal() { 
+      document.getElementById('adminModal').style.display = 'none';
+      document.getElementById('adminError').style.display = 'none';
+    }
+
+    function loginAdmin() {
+      const user = document.getElementById('adminUser').value;
+      const pass = document.getElementById('adminPass').value;
+
+      if (user === ADMIN_USER && pass === ADMIN_PASS) {
+        closeAdminModal();
+        document.getElementById('view-register').style.display = 'none';
+        document.getElementById('view-admin').style.display = 'block';
+        loadAdminTable();
+      } else {
+        document.getElementById('adminError').style.display = 'block';
+      }
+    }
+
+    function logoutAdmin() {
+      document.getElementById('adminUser').value = '';
+      document.getElementById('adminPass').value = '';
+      document.getElementById('view-admin').style.display = 'none';
+      document.getElementById('view-register').style.display = 'block';
+    }
+
+    function loadAdminTable() {
+      const users = JSON.parse(localStorage.getItem('registered_users') || '[]');
+      const tbody = document.getElementById('userTableBody');
+      document.getElementById('userCount').textContent = `Usuarios registrados: ${users.length}`;
+      tbody.innerHTML = '';
+
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay usuarios registrados.</td></tr>';
+        return;
+      }
+
+      users.forEach((u, i) => {
+        tbody.innerHTML += `<tr>
+          <td>${i + 1}</td>
+          <td>${u.nombre}</td>
+          <td>${u.apellido}</td>
+          <td><code>${u.password}</code></td>
+          <td>${u.fecha}</td>
+        </tr>`;
+      });
+    }
+
+    function clearData() {
+      if (confirm('¿Eliminar todos los registros?')) {
+        localStorage.removeItem('registered_users');
+        loadAdminTable();
+      }
+    }
+  </script>
+</body>
+</html>
